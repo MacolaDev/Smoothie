@@ -28,5 +28,4 @@ Demo/resources/models/
 Demo/resources/Textures/
 Demo/resources/Tree/
 Demo/TestSmoothieExport/
-inc/
-SmoothieEngine.dir/
+SmoothieEngine/SmoothieEngine.dir/
