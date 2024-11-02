@@ -12,10 +12,11 @@
 #include "Vector3.h"
 #include "Texture.h"
 #include "Matrix4x4.h"
-
+#include "Matrix3x3.h"
 using namespace SmoothieMath;
 
 namespace Smoothie {
+	class Scene;
 	class Model
 	{
 	protected:
@@ -28,11 +29,13 @@ namespace Smoothie {
 		VertexBuffer vertexBuffer;
 		IndexBuffer indexBuffer;
 
+		Matrix3x3 normalMatrix;
 		Texture textures[16];
 		std::string texturePropertyNames[16];
 		unsigned int additionalTextures[16];
 
 	public:
+		friend class Scene;
 		Matrix4x4 modelMatrix;
 		Model(const std::string& smFilePath);
 		int textureCount;

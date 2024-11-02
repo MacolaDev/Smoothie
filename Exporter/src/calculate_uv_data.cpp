@@ -75,7 +75,6 @@ PyObject* calculate_uv_data(PyObject* self, PyObject* args)
 			continue;
 		}
 		else {
-		std::cout << i << " " << dataFromBlender[i].index << " " << dataFromBlender[i].x << " " << dataFromBlender[i].y << std::endl;
 			finalList.push_back(dataFromBlender[i]);
 		}
 	}

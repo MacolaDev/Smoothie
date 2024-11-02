@@ -50,6 +50,13 @@ Smoothie::Scene::Scene(const std::string& file)
 		Model model = Model(model_file.textContent);
 		Matrix4x4 modelMatrix = getModelMatrix(model_matrix_element);
 		model.modelMatrix = modelMatrix;
+		
+		//calculate normal matrix
+		Matrix4x4 normalMatrix = Matrix4x4(modelMatrix);
+		normalMatrix.inverse();
+		normalMatrix.transpose();
+		model.normalMatrix = Matrix3x3(normalMatrix);
+
 		if (model.shader.pass == ShaderPass::PASS1) 
 		{
 			pbrSceneModels.push_back(model);

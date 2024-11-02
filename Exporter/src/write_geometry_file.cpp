@@ -8,7 +8,7 @@ int packNormal(const vec3& normal)
 	int x_byte = int((1 + normal.x) * 127) & 0xFF;
 	int y_byte = int((1 + normal.y) * 127) & 0xFF;
 	int z_byte = int((1 + normal.z) * 127) & 0xFF;
-	int out = (((x_byte << 0) | (z_byte << 8)) | (y_byte << 16)) | 0;
+	int out = (((x_byte << 0) | (y_byte << 8)) | (z_byte << 16)) | 0;
 	return out;
 }
 
@@ -71,8 +71,8 @@ PyObject* write_geometry_file(PyObject* self, PyObject* args)
 	{
 		XYZNUVTB vertex;
 		vertex.coordinate.x = coordinates[i].x;
-		vertex.coordinate.y = coordinates[i].z;
-		vertex.coordinate.z = coordinates[i].y;
+		vertex.coordinate.y = coordinates[i].y;
+		vertex.coordinate.z = coordinates[i].z;
 		
 		vertex.normal = packNormal(normals[i]);
 		vertex.uv = UVs[i];

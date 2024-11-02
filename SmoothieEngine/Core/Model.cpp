@@ -72,8 +72,9 @@ Model::Model(const std::string& smFilePath)
 	}
 
 
-	shader = Shader(vertexShaderFile, fragmentShaderFile);
+	shader = Shader(fragmentShaderFile);
 	shader.use();
+
 
 	Element propertiesElement = modelfile.getElement("property");
 	for (int i = 0; i < propertiesElement.children.size(); i++)
@@ -116,7 +117,8 @@ void Model::onRender()
 	}
 	
 	shader.setMatrix4x4("modelMatrix", modelMatrix.dataPointer());
-	
+	shader.setMatrix3x3("normalMatrix", normalMatrix.dataPointer());
+
 	glBindVertexArray(VertexAttributePointer);
 	indexBuffer.bind();
 	glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);

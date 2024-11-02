@@ -7,6 +7,8 @@ static PyMethodDef SEModuleDefs[] =
     {"calculate_uv_data", calculate_uv_data, METH_O, calculate_uv_data_docs},
     {"calculate_tangent_data", calculate_tangent_data, METH_O, calculate_tangent_data_docs},
     {"write_geometry_file", write_geometry_file, METH_O, write_geometry_file_data_docs},
+    {"calculate_uv_data_averaged", calculate_uv_data_averaged, METH_O, calculate_uv_data_averaged_docs},
+
     {NULL, NULL, 0, NULL}
 };
 

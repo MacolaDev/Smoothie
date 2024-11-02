@@ -31,13 +31,13 @@ def WriteGeometryFile(filepath: str):
     bpy.ops.object.duplicate()
     
     #Make sharp edges from UV islands and cut them 
-    bpy.ops.object.editmode_toggle()
-    bpy.ops.uv.select_all(action='SELECT')
-    bpy.ops.uv.seams_from_islands(mark_seams=False, mark_sharp=True)
-    bpy.ops.object.modifier_add(type='EDGE_SPLIT')
-    bpy.context.object.modifiers["EdgeSplit"].use_edge_angle = False
-    bpy.ops.object.mode_set(mode='OBJECT')
-    bpy.ops.object.modifier_apply(modifier="EdgeSplit")
+    # bpy.ops.object.editmode_toggle()
+    # bpy.ops.uv.select_all(action='SELECT')
+    # bpy.ops.uv.seams_from_islands(mark_seams=False, mark_sharp=True)
+    # bpy.ops.object.modifier_add(type='EDGE_SPLIT')
+    # bpy.context.object.modifiers["EdgeSplit"].use_edge_angle = False
+    # bpy.ops.object.mode_set(mode='OBJECT')
+    # bpy.ops.object.modifier_apply(modifier="EdgeSplit")
 
     #Triangulate mesh
     bpy.ops.object.modifier_add(type='TRIANGULATE')
@@ -53,7 +53,6 @@ def WriteGeometryFile(filepath: str):
     mesh_data.loops.foreach_get('vertex_index', loops)
     
     filebuffer.indices = loops.copy()
-    filebuffer.indices.reverse()
     filebuffer.numberOfIndices = len(mesh_data.loops)
 
     #Get vertex coordinates
@@ -72,7 +71,7 @@ def WriteGeometryFile(filepath: str):
         uvsForBlender = ProcessBuffer
         uvsForBlender.indexes = loops
         uvsForBlender.data = uv_data
-        filebuffer.vertexUVs = SmoothieExporter.calculate_uv_data(uvsForBlender)
+        filebuffer.vertexUVs = SmoothieExporter.calculate_uv_data_averaged(uvsForBlender)
     else:
         print("No UV layer on the mesh")
         return None
@@ -105,5 +104,7 @@ def WriteGeometryFile(filepath: str):
 
     SmoothieExporter.write_geometry_file(filebuffer)
     
-    #Delete duplucated object
+    #Delete duplucated object and select original back
     bpy.ops.object.delete(use_global=False, confirm=True)
+    original_object.select_set(True)
+    bpy.context.view_layer.objects.active = original_object

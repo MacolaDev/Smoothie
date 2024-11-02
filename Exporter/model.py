@@ -1,85 +1,130 @@
 import xml.etree.ElementTree as ET
 import bpy #type: ignore
+from bpy_extras.io_utils import ExportHelper, ImportHelper #type: ignore
 
-from geometry import WriteGeometryFile
-from textures import bake_texture
+import geometry
+import shaders
 
-#Definition file 
-class ModelFileDefinition:
-    filepath: str
-    saveTextures: bool
+import importlib
+importlib.reload(geometry)
+importlib.reload(shaders)
 
-    def __init__(self, filepath: str):
-        self.filepath = filepath
+#This function is called when selected shader property is called.
+#It changes the class that is assigned to SmoothieShaderSettings of currently selected object.
+def UpdateShaderWindow(self, context):
+    context.object.SmoothieShaderSettings.selected_shader = self.selected_shader
+    return None
 
-def WriteModelFile(fileDefinition: ModelFileDefinition):
-    current_object = bpy.context.object
+#This class defines property group for each object in scene.
+#This properties are used by export scripts to write files to export custom properties for each object
+class ModelProperties(bpy.types.PropertyGroup):
+    props = bpy.props
+
+    #Scene export settings
+    ignore_at_all: props.BoolProperty(name = "Ignore at all", default = False, description = "Model will be ignored by exporter")
+    only_update_position: props.BoolProperty(name = "Update local matrix", default = False, description = "Location, scale and rotation of this model will be updated, but model itself wont be changed in any way")
+
+    #Mesh export settings
+    export_mesh: props.BoolProperty(name = "Export mesh", default = True, description = "Mesh will be exported at the same location of model file, with name same as name of object in the scene.")
+    export_mesh_file: props.StringProperty(name = "Mesh file", description = "Locaton of .sgeometry file")
+
+    #shader export settings
+    double_sided: props.BoolProperty(name = "Double sided", default = False, description = "Disables/enables rendering for both sides.")
+
+    selected_shader: props.EnumProperty(
+        name="Shader", description="Shader that this model will use in render engine", 
+        items = shaders.all_shaders, default= shaders.all_shaders[0][0], update = UpdateShaderWindow)
     
+    save_filepath: props.StringProperty(name = "Save filepath", default = "", description = "Filepath where this file should be saved.")
+
+
+#Import button for selecting .geometry file
+class SMOOTHIE_OT_ImportSgeometryFileButton(bpy.types.Operator, ImportHelper):
+    bl_idname = "smoothie.import_sgeometry_file_button"
+    bl_label = "Select .geometry file"
+
+    filter_glob: bpy.props.StringProperty(default = '*.sgeometry', options = {'HIDDEN'})
+
+    def execute(self, context):
+        bpy.context.object.SmoothieExportSettings.export_mesh_file = self.filepath
+        return {'FINISHED'}
+
+def WriteModelFile():
+    current_object = bpy.context.object
     if(current_object == None):
         print("No object selected")
-        return
-    
-    splitted_filepath = fileDefinition.filepath.split("\\")
-    file_name = (splitted_filepath[-1]).split(".")[0]
-    splitted_filepath.pop(-1)
-    save_folder ="\\".join(splitted_filepath)
-
-    DiffTexture = save_folder + "\\" + file_name + "_DIFF" + ".png"
-    RoughnessTexture = save_folder + "\\" + file_name + "_ROUGH" + ".png"
-    MetalTexture = save_folder + "\\" + file_name + "_METAL" + ".png"
-    NormalTexture = save_folder + "\\" + file_name + "_NORM" + ".png"
-    
-    if(fileDefinition.saveTextures):
-
-        #Albedo map
-        bake_texture("DIFFUSE", DiffTexture)
-
-        #Roughness map
-        bake_texture("ROUGHNESS", RoughnessTexture)
-
-        #Metalness map
-        bake_texture("METALIC", MetalTexture)
-
-        #Normal map
-        bake_texture("NORMAL", NormalTexture)
-
-    geometryFile = ""
-    if(current_object.type == "MESH"):
-        geometryFile = fileDefinition.filepath.split(".")[0] + ".geometry"
-        WriteGeometryFile(geometryFile)
+        return None
+    export_settings = current_object.SmoothieExportSettings
+    shader_settings = current_object.SmoothieShaderSettings
 
     
     root = ET.Element("model")
-    geometry_file = ET.SubElement(root, "geometryFile")
-    geometry_file.text = geometryFile
     
-    fragmentShader = ET.SubElement(root, "fragmentShader")
-    fragmentShader.text = "shaders/pbr/pbr.glsl"
+    #Geometry file 
+    geometryFileElement = ET.SubElement(root, "geometryFile")
+    geometryFileLocation = ""
+    if export_settings.export_mesh == False:
+        geometryFileLocation = str(export_settings.export_mesh_file)
+    else:
+        geometryFileLocation = export_settings.save_filepath.split(".")[0] + ".sgeometry"
     
-    shader_property = ET.SubElement(root, "property")
+    try:
+        geometryFileLocation = "resources\\" + geometryFileLocation.split("resources\\")[1]
+    except IndexError:
+        geometryFileLocation = geometryFileLocation
+        print("Warning! Geometry file is not inside \" resources \" folder! Full path will be used.")
+        
+    geometryFileElement.text = geometryFileLocation
+    geometry.WriteGeometryFile(geometryFileLocation)
     
-    #TODO: Make this not so hard-coded
-    diff_texture  = ET.SubElement(shader_property, "Texture")
-    diff_texture.text = "diffuse"
-    diff_texture_value = ET.SubElement(diff_texture, "value")
+    
+    #Shader location
+    root.append(shader_settings.getShaderLocation())
+    
+    #Shader properties
+    root.append(shader_settings.getPropertyElement())
+    
 
-    normalMap_texture  = ET.SubElement(shader_property, "Texture")
-    normalMap_texture.text = "normalMap"
-    normalMap_texture_value = ET.SubElement(normalMap_texture, "value")
+    ET.ElementTree(root).write(export_settings.save_filepath)
+    return None
 
-    metalnessMap_texture  = ET.SubElement(shader_property, "Texture")
-    metalnessMap_texture.text = "metalnessMap"
-    metalnessMap_texture_value = ET.SubElement(metalnessMap_texture, "value")
+class SMOOTHIE_OT_ModelExportButton(bpy.types.Operator, ExportHelper):
+    """Button operator that prints to terminal"""
+    bl_idname = "smoothie.model_export_button"
+    bl_label = "Export Model"
 
-    roughnessMap_texture  = ET.SubElement(shader_property, "Texture")
-    roughnessMap_texture.text = "roughnessMap"
-    roughnessMap_texture_value = ET.SubElement(roughnessMap_texture, "value")
+    filename_ext = '.smodel' 
     
-    if(fileDefinition.saveTextures):
-        diff_texture_value.text = DiffTexture
-        normalMap_texture_value.text = NormalTexture
-        metalnessMap_texture_value.text = MetalTexture
-        roughnessMap_texture_value.text = RoughnessTexture
+    filter_glob: bpy.props.StringProperty(default = '*.smodel', options = {'HIDDEN'})
 
-    ET.ElementTree(root).write(fileDefinition.filepath)
     
+    def execute(self, context):
+
+        bpy.context.object.SmoothieExportSettings.save_filepath = self.filepath
+        WriteModelFile()
+        
+        return {'FINISHED'}
+    
+def registerClasses():
+    for i in shaders.all_shaders_pointers:
+        bpy.utils.register_class(i)
+    bpy.utils.register_class(shaders.shader)
+    
+
+    bpy.utils.register_class(ModelProperties)
+    bpy.utils.register_class(SMOOTHIE_OT_ImportSgeometryFileButton) 
+    bpy.utils.register_class(SMOOTHIE_OT_ModelExportButton) 
+    bpy.types.Object.SmoothieExportSettings = bpy.props.PointerProperty(type=ModelProperties)
+    bpy.types.Object.SmoothieShaderSettings = bpy.props.PointerProperty(type=shaders.shader)
+
+def unregisterClasses():
+    for i in shaders.all_shaders_pointers:
+        bpy.utils.unregister_class(i)
+    bpy.utils.unregister_class(shaders.shader)
+
+
+    bpy.utils.unregister_class(SMOOTHIE_OT_ImportSgeometryFileButton) 
+    bpy.utils.unregister_class(SMOOTHIE_OT_ModelExportButton) 
+    del bpy.types.Object.SmoothieExportSettings
+    del bpy.types.Object.SmoothieShaderSettings
+    bpy.utils.unregister_class(ModelProperties)

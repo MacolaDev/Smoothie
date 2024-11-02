@@ -4,11 +4,11 @@
 #include "PostProcessing.h"
 
 unsigned int SSAO::ssaoFBO = 0;
-unsigned int SSAO::noiseTexture = 0;
-unsigned int SSAO::ssaoColorBuffer = 0;
+Texture SSAO::noiseTexture;
+Texture SSAO::ssaoColorBuffer;
 
-unsigned int SSAO::BluredFBO = 0;
-unsigned int SSAO::BluredTexture = 0;
+unsigned int SSAO::BluredFBO;
+Texture SSAO::BluredTexture;
 
 std::vector<Vector3> SSAO::ssaoNoise;
 std::vector<Vector3> SSAO::ssaoKernel;
@@ -19,23 +19,13 @@ Shader SSAO::blure;
 void SSAO::generateSSAOTextures(int SCR_WIDTH, int SCR_HEIGHT)
 {
 	generateNoise();
-	glGenTextures(1, &noiseTexture);
-	glBindTexture(GL_TEXTURE_2D, noiseTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssaoNoise[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	noiseTexture = Texture(&ssaoNoise[0].x, 4, 4, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
 
 	glGenFramebuffers(1, &ssaoFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 	
-	glGenTextures(1, &ssaoColorBuffer);
-	glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, ssaoColorBuffer, 0);
+	ssaoColorBuffer = Texture(nullptr, SCR_WIDTH, SCR_HEIGHT, RGB, RGB8);
+	ssaoColorBuffer.bindToFramebuffer(ssaoFBO, 0);
 
 	shaderSSAO = Shader("shaders/standard/SSAO.glsl");
 	shaderSSAO.use();
@@ -46,12 +36,8 @@ void SSAO::generateSSAOTextures(int SCR_WIDTH, int SCR_HEIGHT)
 	glGenFramebuffers(1, &BluredFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, BluredFBO);
 	
-	glGenTextures(1, &BluredTexture);
-	glBindTexture(GL_TEXTURE_2D, BluredTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, SCR_WIDTH, SCR_HEIGHT, 0, GL_RGB, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, BluredTexture, 0);
+	BluredTexture = Texture((float*)(nullptr), SCR_WIDTH, SCR_HEIGHT, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
+	BluredTexture.bindToFramebuffer(BluredFBO, 0);
 
 	blure = Shader("shaders/blure/ssaoblure.glsl");
 	blure.use();
@@ -71,8 +57,8 @@ void SSAO::generateNoise()
 	for (unsigned int i = 0; i < 64; ++i)
 	{
 		Vector3 sample( 
-			randomFloats(generator) /** 2.0 - 1.0*/, 
-			randomFloats(generator) /** 2.0 - 1.0*/, 
+			randomFloats(generator), 
+			randomFloats(generator), 
 			randomFloats01(generator)
 		);
 		sample = SmoothieMath::normalize(sample);
@@ -87,7 +73,7 @@ void SSAO::generateNoise()
 
 	for (unsigned int i = 0; i < 16; i++)
 	{
-		Vector3 noise(randomFloats(generator) /** 2.0 - 1.0*/, randomFloats(generator) /** 2.0 - 1.0*/, 0.0f);
+		Vector3 noise(randomFloats(generator), randomFloats(generator), 0.0f);
 		noise = SmoothieMath::normalize(noise);
 		ssaoNoise.push_back(noise);
 	}
@@ -107,8 +93,7 @@ void SSAO::onRender()
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, DeferredShading::gNormal);
 	
-	glActiveTexture(GL_TEXTURE2);
-	glBindTexture(GL_TEXTURE_2D, noiseTexture);
+	noiseTexture.bind(2);
 	
 	//Add noise texture
 	int uniformLocation = glGetUniformLocation(shaderSSAO.ID, "samples");
@@ -119,8 +104,7 @@ void SSAO::onRender()
 	glBindFramebuffer(GL_FRAMEBUFFER, BluredFBO);
 	blure.use();
 
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, ssaoColorBuffer);
+	ssaoColorBuffer.bind(0);
 	
 	RenderQuad();
 

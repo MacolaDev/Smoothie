@@ -25,7 +25,7 @@ layout (std140, binding = 0) uniform Matrices
 
 
 vec3 LightPosition = vec3(0.38412f,  3.1104f, -6.22991f);
-vec3 LightColor = vec3(1.0f, 0.0f, 0.0f) * 1000;
+vec3 LightColor = vec3(1.0f, 0.0f, 0.0f) * 0;
 
 const float PI = 3.14159265359;
 
@@ -102,8 +102,8 @@ void main()
         // calculate per-light radiance
         vec3 L = normalize(LightPosition - FragPos); //Light direction
         vec3 H = normalize(V + L);
-        float DISTANCE = length(LightPosition - FragPos);
-        float attenuation = 1.0 / (DISTANCE * DISTANCE);
+        float attenuation = 1.0 / (length(L) * length(L));
+        float TEST = max(dot(N, L), 0.0);
         vec3 radiance = LightColor * attenuation;
 
         // Cook-Torrance BRDF
@@ -155,6 +155,7 @@ void main()
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));
+    
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
 

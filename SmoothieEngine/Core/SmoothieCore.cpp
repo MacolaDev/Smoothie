@@ -11,6 +11,7 @@ bool SmoothieCore::isEngineReady = false;
 Smoothie::Camera* SmoothieCore::camera = nullptr;
 Smoothie::Scene SmoothieCore::currentScene;
 Smoothie::UniformBuffers SmoothieCore::standardBuffer;
+Smoothie::UniformBuffers SmoothieCore::additionalBuffer;
 
 void SmoothieCore::updateRenderResolution(int width, int height)
 {
@@ -37,6 +38,7 @@ void SmoothieCore::render()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
 	standardBuffer.onRender();
+	additionalBuffer.onRender();
 
 	camera->updateCameraMatrix();
 
@@ -73,6 +75,10 @@ void SmoothieCore::initilize()
 	standardBuffer.addBufferSubData(sizeof(Matrix4x4), camera->projectionMatrix.dataPointer());
 	standardBuffer.addBufferSubData(sizeof(Matrix4x4), camera->cameraMatrix.dataPointer());
 	standardBuffer.addBufferSubData(sizeof(Vector3), &camera->cameraPos);
+
+	additionalBuffer.generateBuffer();
+	additionalBuffer.addBufferSubData(sizeof(int), &SCR_WIDTH);
+	additionalBuffer.addBufferSubData(sizeof(int), &SCR_HEIGHT);
 
 	SSAO::generateSSAOTextures(SCR_WIDTH, SCR_HEIGHT);
 }

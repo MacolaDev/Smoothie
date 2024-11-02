@@ -16,6 +16,8 @@ class SmoothieCore
 
 	//Standard uniform buffer that smoothie uses
 	static Smoothie::UniformBuffers standardBuffer;
+	
+	static Smoothie::UniformBuffers additionalBuffer;
 
 public:
 	static int SCR_WIDTH, SCR_HEIGHT;

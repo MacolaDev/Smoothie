@@ -52,6 +52,8 @@ public:
 	
 	void setMatrix4x4(const std::string& name, float* value);
 	
+	void setMatrix3x3(const std::string& name, float* value);
+
 	void setVector3(const std::string& name, const Vector3& value);
 };
 

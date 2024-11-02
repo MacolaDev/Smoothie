@@ -22,8 +22,14 @@ layout (std140, binding = 0) uniform Standard
 	vec3 viewPos;
 };
 
+layout (std140, binding = 1) uniform Standard2
+{
+    int SCR_WIDTH;
+	int SCR_HEIGHT;
+};
 
-const vec2 noiseScale = vec2(1280.0/4.0, 720.0/4.0); 
+
+const vec2 noiseScale = vec2(SCR_WIDTH/4.0, SCR_HEIGHT/4.0); 
 
 out vec4 FragColor;
 void main()

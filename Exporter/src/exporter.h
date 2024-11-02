@@ -34,3 +34,7 @@ const char calculate_tangent_data_docs[] =
 PyObject* write_geometry_file(PyObject* self, PyObject* args);
 const char write_geometry_file_data_docs[] =
 "Takes vertex and index data and writes .geometry file";
+
+PyObject* calculate_uv_data_averaged(PyObject* self, PyObject* args);
+const char calculate_uv_data_averaged_docs[] =
+"Similar to \"calculate_uv_data\" but it averages UV data from all loops for each vertex.";

@@ -1,81 +1,100 @@
 import bpy #type: ignore
-from bpy_extras.io_utils import ExportHelper # type: ignore
 
-from model import ModelFileDefinition, WriteModelFile
-from scene import SceneFileDefinition, writeSceneFile
+import scene
+import model
 
-class SMOOTRHIE_OT_MeshExportButton(bpy.types.Operator, ExportHelper):
-    """Button operator that prints to terminal"""
-    bl_idname = "smoothie.mesh_export_button"
-    bl_label = "Export Model"
+#This is here so that I dont have to close blender every time I make a change in other files.
+#It shouldnt be here in the final verion of script. There will be more of theese in other scripts too.
+import importlib
+importlib.reload(model)
+importlib.reload(scene)
 
-    filename_ext = '.smodel' 
-    
-    filter_glob = bpy.props.StringProperty(default = '*.smodel', options = {'HIDDEN'})
-    
-    exportTextures: bpy.props.BoolProperty(name='Export PBR textures', description='Bakes PBR textures from active material and saves them.', default=True) # type: ignore
-    
-    def execute(self, context):
-
-        modelFileDefinition = ModelFileDefinition(self.filepath)
-        modelFileDefinition.saveTextures = self.exportTextures
-        
-        WriteModelFile(modelFileDefinition)
-        
-        return {'FINISHED'}
-    
-class SMOOTRHIE_OT_SceneExportButton(bpy.types.Operator, ExportHelper):
-    """Button operator that prints to terminal"""
-    bl_idname = "smoothie.scene_export_button"
-    bl_label = "Export Scene"
-
-    filename_ext = '.sscene' 
-    
-    filter_glob = bpy.props.StringProperty(default = '*.sscene', options = {'HIDDEN'})
-    
-    def execute(self, context):
-        file = SceneFileDefinition(self.filepath)
-        writeSceneFile(file)
-        return {'FINISHED'}
-
+#Layout class for exporting models
 class SmoothieExporter(bpy.types.Panel):    
-    bl_label = "Mesh Export"
+    bl_label = "Model Export"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Smoothie Export"
-
+    bl_idname = "SMOOTHIE_PT_SmoothieExporter"
     
     def draw(self, context):
+        obj = bpy.context.object
         layout = self.layout
-        layout.label(text =  "Export model file:")
-        if(bpy.context.object == None):
+        if(obj == None):
             layout.enabled = False
-        layout.operator("smoothie.mesh_export_button", text = "Export Model", icon = "CUBE")
+            return
 
+        export = obj.SmoothieExportSettings
+        
+
+        #Scene export settings
+        layout.label(text ="Scene export settings")
+
+        layout.prop(export, "ignore_at_all")
+        if export.ignore_at_all == False:
+            layout.prop(export, "only_update_position")
+        
+        #Geometry file setting
+        layout.label(text = "Mesh export settings")
+        layout.prop(export, "export_mesh")
+        if export.export_mesh == False:
+            layout.prop(export, "export_mesh_file")
+            layout.operator("smoothie.import_sgeometry_file_button", text = "Select .geometry file", icon = "SCENE_DATA")
+
+        #Shader properties
+        layout.label(text = "Shader properties")
+        layout.prop(export, "double_sided")
+
+
+        layout.prop(export, "selected_shader")
+        obj.SmoothieShaderSettings.draw(layout)
+        
+        layout.label(text =  "Export model file:")
+        split = layout.split()
+        split.prop(export, "save_filepath")
+        split.enabled = False
+        layout.operator("smoothie.model_export_button", text = "Export Model", icon = "CUBE")
+
+#Layout class for exporting scenes
 class SmoothieSceneExporter(bpy.types.Panel):    
-    bl_label = "Scene Export"
+    bl_label = "Scene Export (In development!)"
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Smoothie Export"
+    bl_idname = "SMOOTHIE_PT_SmoothieSceneExporter"
 
     
     def draw(self, context):
         layout = self.layout
+        export = bpy.context.scene.SmoothieExportSettings
+        
+        layout.label(text = "Sky settings")
+        layout.prop(export, "hdri_image")
+        
         layout.label(text =  "Export scene file:")
+
+        #Makes save filepath variable read-only
+        split = layout.split()
+        split.prop(export, "save_filepath")
+        split.enabled = False
+
         layout.operator("smoothie.scene_export_button", text = "Export Scene", icon = "SCENE_DATA")
 
+def register(): 
+    
+    model.registerClasses()
+    scene.registerClasses()
 
-def register():
-    bpy.utils.register_class(SMOOTRHIE_OT_SceneExportButton)
-    bpy.utils.register_class(SMOOTRHIE_OT_MeshExportButton)
     bpy.utils.register_class(SmoothieExporter)
     bpy.utils.register_class(SmoothieSceneExporter)
 
 def unregister():
-    bpy.utils.unregister_class(SMOOTRHIE_OT_SceneExportButton)
-    bpy.utils.unregister_class(SMOOTRHIE_OT_MeshExportButton)
+    model.unregisterClasses()
+    scene.unregisterClasses()
+
     bpy.utils.unregister_class(SmoothieExporter)
     bpy.utils.unregister_class(SmoothieSceneExporter)
+
 
 if __name__ == "__main__":
     register()

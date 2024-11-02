@@ -29,3 +29,5 @@ Demo/resources/Textures/
 Demo/resources/Tree/
 Demo/TestSmoothieExport/
 SmoothieEngine/SmoothieEngine.dir/
+lib/
+Demo/resources/SmoothieDemoScene/

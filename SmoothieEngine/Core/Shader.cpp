@@ -184,7 +184,14 @@ Shader::Shader(const std::string& singleShaderSourceFile)
 	SmoothieDebug(&fragmentShader);
 	ID = shaderProgram;
 
-	pass = ShaderPass::PASS2;
+	if (singleShaderSourceFile.find("pbr") != std::string::npos)
+	{
+		pass = ShaderPass::PASS1;
+	}
+	else
+	{
+		pass = ShaderPass::PASS2;
+	}
 }
 
 void Shader::use()
@@ -216,6 +223,13 @@ void Shader::setMatrix4x4(const std::string& name, float* value)
 	const char* c_string = name.c_str();
 	int location = glGetUniformLocation(ID, c_string);
 	glUniformMatrix4fv(location, 1, GL_FALSE, value);
+}
+
+void Shader::setMatrix3x3(const std::string& name, float* value)
+{
+	const char* c_string = name.c_str();
+	int location = glGetUniformLocation(ID, c_string);
+	glUniformMatrix3fv(location, 1, GL_FALSE, value);
 }
 
 void Shader::setVector3(const std::string& name, const Vector3& value)

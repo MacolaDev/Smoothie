@@ -15,6 +15,7 @@ Shader DeferredShading::lightingPassShader;
 
 void DeferredShading::generateBuffersTextures()
 {
+	//TODO: fix all of this OpenGL textrutes stuff with Texture class
 	initPostProcessing();
 	glewInit();
 	glGenFramebuffers(1, &gBuffer);
@@ -54,15 +55,6 @@ void DeferredShading::generateBuffersTextures()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gMRAO, 0);
-
-
-	glGenTextures(1, &gMRAO);
-	glBindTexture(GL_TEXTURE_2D, gMRAO);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, gMRAO, 0);
-
 
 
 	// - tell OpenGL which color attachments we’ll use (of this framebuffer)
@@ -137,7 +129,7 @@ void DeferredShading::renderPBR()
 	glBindTexture(GL_TEXTURE_2D, Skybox::brdfLUTTexture);
 
 	glActiveTexture(GL_TEXTURE7);
-	glBindTexture(GL_TEXTURE_2D, SSAO::BluredTexture);
+	glBindTexture(GL_TEXTURE_2D, SSAO::BluredTexture.ID);
 
 	lightingPassShader.use();
 	
