@@ -33,3 +33,4 @@ lib/
 Demo/resources/SmoothieDemoScene/
 Exporter/SmoothieExporter.pdb
 Exporter/export_script_blender.py
+Exporter/Debug/
