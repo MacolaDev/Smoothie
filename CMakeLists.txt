@@ -13,4 +13,6 @@ add_subdirectory(SmoothieEngine)
 add_subdirectory(Demo)
 add_subdirectory(Exporter)
 
+add_dependencies(Demo SmoothieEngine)
+
 link_libraries()

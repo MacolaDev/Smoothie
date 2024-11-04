@@ -11,5 +11,7 @@ public:
 	
 	//Mostly used for planes in post-processing
 	static void VertexAttributePointerXYUV(unsigned int ID);
+
+	static void VertexAttributePointerXYZ(unsigned int ID);
 };
 

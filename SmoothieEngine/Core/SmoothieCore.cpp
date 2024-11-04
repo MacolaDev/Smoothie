@@ -37,6 +37,8 @@ void SmoothieCore::render()
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	
+	glEnable(GL_CULL_FACE);
+
 	standardBuffer.onRender();
 	additionalBuffer.onRender();
 
@@ -68,7 +70,7 @@ void SmoothieCore::initilize()
 	glEnable(GL_STENCIL_TEST);
 	glDepthFunc(GL_LEQUAL);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	
+
 	DeferredShading::generateBuffersTextures();
 
 	standardBuffer.generateBuffer();

@@ -16,11 +16,15 @@ unsigned int Skybox::prefilterMap = 0;
 Skybox::Skybox(const std::string& file)
 {
 	stbi_set_flip_vertically_on_load(true);
+	
 	initPostProcessing();
+
 	data = stbi_loadf(file.c_str(), &width, &height, &nrComponents, 0);
-	if (data == nullptr) {
+	if (data == nullptr) 
+	{
 		std::cout << __FUNCTION__": Cant load HDR image: " + file << std::endl;
 	}
+
 	glGenTextures(1, &TextureID);
 	glBindTexture(GL_TEXTURE_2D, TextureID);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data);
@@ -33,14 +37,6 @@ Skybox::Skybox(const std::string& file)
 	{
 		stbi_image_free(data);
 	}
-
-	
-	unitCube = Mesh("resources/models/skybox/unitCube.geometry");
-	vertexBuffer = VertexBuffer(unitCube.dataPointer(), unitCube.numberOfvertices);
-	glGenVertexArrays(1, &vertexBufferAttributeArray);
-	glBindVertexArray(vertexBufferAttributeArray);
-	VertexArrayObject::GenerateVertexArray(vertexBufferAttributeArray, VertexBufferType::XYZNUVTB);
-	
 
 
 	glGenFramebuffers(1, &captureFBO);
@@ -65,8 +61,6 @@ Skybox::Skybox(const std::string& file)
 		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
 	}
 	
-	indexBuffer = IndexBuffer(unitCube.indexBufferData(), unitCube.numberOfIndices);
-	indexBuffer.bind();
 	
 
 	hdrToCubemapShader = Shader("shaders/standard/hdrToCubemap.glsl");
@@ -81,6 +75,7 @@ Skybox::Skybox(const std::string& file)
 		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)),
 		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f))
 	};
+
 	//TODO: Update Matrix4x4
 	auto projMatrix = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
 	
@@ -101,13 +96,10 @@ Skybox::Skybox(const std::string& file)
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		//Render quad
-		glBindVertexArray(vertexBufferAttributeArray);
-		indexBuffer.bind();
-		glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);
-		
+		RenderCube();
 
 	}
+
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_CULL_FACE);
 	glViewport(0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT);
@@ -115,8 +107,6 @@ Skybox::Skybox(const std::string& file)
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
-	indexBuffer.bind();
 	
 	irradianceShader = Shader("shaders/standard/irradianceMap.glsl");
 	irradianceShader.use();
@@ -144,10 +134,7 @@ void Skybox::drawSkybox()
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, envCubemap);
 
-	glBindVertexArray(vertexBufferAttributeArray);
-	indexBuffer.bind();
-	glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);
-	glEnable(GL_CULL_FACE);
+	RenderCube();
 }
 
 void Skybox::calculateIrradiance()
@@ -203,9 +190,7 @@ void Skybox::calculateIrradiance()
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradianceMap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glBindVertexArray(vertexBufferAttributeArray);
-		indexBuffer.bind();
-		glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);
+		RenderCube();
 	}
 	
 	glEnable(GL_CULL_FACE);
@@ -238,10 +223,8 @@ void Skybox::calculateCubemapfromHDRI()
 		hdrToCubemapShader.setMatrix4x4("projection", glm::value_ptr(projMatrix));
 		hdrToCubemapShader.setMatrix4x4("view", glm::value_ptr(captureViews[i]));
 
-		//Render quad
-		glBindVertexArray(vertexBufferAttributeArray);
-		indexBuffer.bind();
-		glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);
+		RenderCube();
+
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, envCubemap, 0);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -318,9 +301,7 @@ void Skybox::calculatePrefilteredMap()
 			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilterMap, mip);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glBindVertexArray(vertexBufferAttributeArray);
-			indexBuffer.bind();
-			glDrawElements(GL_TRIANGLES, indexBuffer.sizeOfData, GL_UNSIGNED_INT, 0);
+			RenderCube();
 		}
 
 	}
@@ -333,6 +314,7 @@ void Skybox::calculatePrefilteredMap()
 
 	//brdf map 
 	glGenTextures(1, &brdfLUTTexture);
+
 	// pre-allocate enough memory for the LUT texture.
 	glBindTexture(GL_TEXTURE_2D, brdfLUTTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F, 512, 512, 0, GL_RG, GL_FLOAT, 0);
@@ -349,7 +331,9 @@ void Skybox::calculatePrefilteredMap()
 	glViewport(0, 0, 512, 512);
 	brdfShader.use();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
 	RenderQuad();
+	
 	glBindRenderbuffer(GL_RENDERBUFFER, 0);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glViewport(0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT);

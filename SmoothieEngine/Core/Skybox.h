@@ -15,14 +15,7 @@ class Skybox: private PostProcessing
 	Shader hdrToCubemapShader;
 	Shader irradianceShader;
 	Shader prefilterShader;
-	
-	unsigned int BoxVAO;
-	Mesh unitCube;
-	VertexBuffer vertexBuffer;
-	IndexBuffer indexBuffer;
-	
 
-	unsigned int vertexBufferAttributeArray;
 	unsigned int captureFBO, captureRBO;
 
 	Shader brdfShader;

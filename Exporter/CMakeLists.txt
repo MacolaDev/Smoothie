@@ -24,6 +24,10 @@ set_target_properties(Exporter PROPERTIES SUFFIX ".pyd")
 #Name of a function must be the same as name in Init function inside module
 set_target_properties(Exporter PROPERTIES OUTPUT_NAME "SmoothieExporter")
 
+set(CXXFLAGS "${CXXFLAGS} /permissive-")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /permissive-")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /permissive-")
+
 link_libraries()
 set_target_properties( Exporter PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CMAKE_SOURCE_DIR}/Exporter

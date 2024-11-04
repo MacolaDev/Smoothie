@@ -88,3 +88,14 @@ void VertexArrayObject::VertexAttributePointerXYUV(unsigned int ID)
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, size, (void*)(2 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 }
+
+void VertexArrayObject::VertexAttributePointerXYZ(unsigned int ID)
+{
+	glewInit();
+	glBindVertexArray(ID);
+	constexpr int size = 8 * sizeof(float);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, size, (void*)0);
+	glEnableVertexAttribArray(0);
+
+}

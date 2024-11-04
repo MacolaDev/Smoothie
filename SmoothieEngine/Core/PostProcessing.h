@@ -8,6 +8,9 @@ class PostProcessing
 {
 	static unsigned int quatVertexAttribue;
 	static VertexBuffer quad;
+
+	static unsigned int cubeVertexAttribue;
+	static VertexBuffer cube;
 public:
 	PostProcessing() = default;
 
@@ -17,5 +20,7 @@ public:
 	//Draws a quad on you screen.
 	//Dont forget to bind your shader before calling it. 
 	static void RenderQuad();
+
+	static void RenderCube();
 };
 
