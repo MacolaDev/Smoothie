@@ -7,8 +7,8 @@ add_library(SmoothieEngine STATIC ${SOURCES})
 
 #3th party includes
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/inc/GLAD/include)
-target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/inc/glm)
-target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/inc/stb)
+target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/include/glm)
+target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/include/stb)
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/inc/GLFW/include)
 
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Core)

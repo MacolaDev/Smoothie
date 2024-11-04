@@ -164,9 +164,9 @@ void MouseCallback(GLFWwindow* window, double xposIn, double yposIn)
         pitch = -89.0f;
 
     Vector3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    front.x = cos(toRadians(yaw)) * cos(toRadians(pitch));
+    front.y = sin(toRadians(pitch));
+    front.z = sin(toRadians(yaw)) * cos(toRadians(pitch));
     front.normalizeVector();
     demoCamera.updateCameraFront(front);
 }

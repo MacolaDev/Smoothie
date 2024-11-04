@@ -5,7 +5,6 @@
 #include "Mesh.h"
 #include "VertexBuffer.h"
 #include "IndexBuffer.h"
-#include "glm/ext.hpp"
 #include "PostProcessing.h"
 class Skybox: private PostProcessing
 {
