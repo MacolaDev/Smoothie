@@ -2,12 +2,36 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include "SmoothieMath.h"
 
-//using ElementVector = std::vector<Element>;
-struct Element {
+struct Element 
+{
     std::string name;
     std::string textContent;
     std::vector<Element> children;
+
+    //Converts textContent to Vector3 value
+    SmoothieMath::Vector3 getVector3();
+
+    //Converts textContent to Vector4 value
+    SmoothieMath::Vector4 getVector4();
+
+    //Converts textContent to bool value
+    bool getBool();
+
+    //Converts textContent to int value
+    int getInt();
+
+    //Converts textContent to float value
+    float getFloat();
+
+    //Returns a pointer to a child of selected element with name "name".
+    //Returns nullptr if child does not exist.
+    Element* getChild(const std::string& name);
+
+    //Returns true if child with name "name" exists.
+    //Otherwise it returns false.
+    bool hasChild(const std::string& name) const;
 };
 
 class ParseXML

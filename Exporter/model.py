@@ -1,3 +1,4 @@
+import importlib.abc
 import xml.etree.ElementTree as ET
 import bpy #type: ignore
 from bpy_extras.io_utils import ExportHelper, ImportHelper #type: ignore
@@ -15,6 +16,19 @@ def UpdateShaderWindow(self, context):
     context.object.SmoothieShaderSettings.selected_shader = self.selected_shader
     return None
 
+def getBoundBox(object):
+    
+    root = ET.Element("BoundingBox")
+    min_vec = ET.Element("min")
+    min_vec.text = str(round(object.bound_box[4][0], 4)) + " " + str(round(object.bound_box[4][1], 4)) + " " + str(round(object.bound_box[4][2], 4))
+    
+    max_vec = ET.Element("max")
+    max_vec.text = str(round(object.bound_box[2][0], 4)) + " " + str(round(object.bound_box[2][1], 4)) + " " + str(round(object.bound_box[2][2], 4))
+    
+    root.append(min_vec)
+    root.append(max_vec)
+    return root
+
 #This class defines property group for each object in scene.
 #This properties are used by export scripts to write files to export custom properties for each object
 class ModelProperties(bpy.types.PropertyGroup):
@@ -30,11 +44,12 @@ class ModelProperties(bpy.types.PropertyGroup):
 
     #shader export settings
     double_sided: props.BoolProperty(name = "Double sided", default = False, description = "Disables/enables rendering for both sides.")
-
+    useAlpha: props.BoolProperty(name = "Use Alpha", default = False, description = "Disables/enables alpha channel blending")
+    
     selected_shader: props.EnumProperty(
         name="Shader", description="Shader that this model will use in render engine", 
         items = shaders.all_shaders, default= shaders.all_shaders[0][0], update = UpdateShaderWindow)
-    
+
     save_filepath: props.StringProperty(name = "Save filepath", default = "", description = "Filepath where this file should be saved.")
 
 
@@ -68,6 +83,8 @@ def WriteModelFile():
     else:
         geometryFileLocation = export_settings.save_filepath.split(".")[0] + ".sgeometry"
     
+    geometry.WriteGeometryFile(geometryFileLocation)
+    
     try:
         geometryFileLocation = "resources\\" + geometryFileLocation.split("resources\\")[1]
     except IndexError:
@@ -75,7 +92,6 @@ def WriteModelFile():
         print("Warning! Geometry file is not inside \" resources \" folder! Full path will be used.")
         
     geometryFileElement.text = geometryFileLocation
-    geometry.WriteGeometryFile(geometryFileLocation)
     
     
     #Shader location
@@ -84,6 +100,7 @@ def WriteModelFile():
     #Shader properties
     root.append(shader_settings.getPropertyElement())
     
+    root.append(getBoundBox(current_object))
 
     ET.ElementTree(root).write(export_settings.save_filepath)
     return None

@@ -1,6 +1,8 @@
 #include "ParseXML.h"
 #include <fstream>
 #include <iostream>
+#include <sstream>
+using namespace SmoothieMath;
 
 //Element starts with < and ends with > 
 std::string ElementToken(std::ifstream& data) {
@@ -146,3 +148,81 @@ Element ParseXML::getElement(const std::string& name)
 	return Element();
 }
 
+SmoothieMath::Vector3 Element::getVector3()
+{
+	std::istringstream data(textContent);
+	
+	Vector3 result;
+	
+	float x, y, z;
+	
+	data >> x >> y >> z;
+
+	result.setX(x);
+	result.setY(y);
+	result.setZ(z);
+
+	return result;
+}
+
+
+SmoothieMath::Vector4 Element::getVector4()
+{
+	std::istringstream data(textContent);
+
+
+	float x, y, z, w;
+
+	data >> x >> y >> z >> w;
+	Vector4 result(x, y, z, w);
+	
+	return result;
+}
+
+bool Element::getBool()
+{
+	if (textContent == "true") return true;
+	return false;
+}
+
+int Element::getInt()
+{
+	std::istringstream data(textContent);
+	int number;
+	data >> number;
+	return number;
+}
+
+float Element::getFloat()
+{
+	std::istringstream data(textContent);
+	float number;
+	data >> number;
+	return number;
+}
+
+Element* Element::getChild(const std::string& name)
+{
+	for (int i = 0; i < children.size(); i++) 
+	{
+		std::string elementName = children[i].name;
+		if (elementName == name) 
+		{
+			return &children[i];
+		}
+	}
+	return nullptr;
+}
+
+bool Element::hasChild(const std::string& name) const
+{
+	for (int i = 0; i < children.size(); i++)
+	{
+		std::string elementName = children[i].name;
+		if (elementName == name)
+		{
+			return true;
+		}
+	}
+	return false;
+}

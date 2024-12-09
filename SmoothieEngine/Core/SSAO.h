@@ -16,14 +16,14 @@ class DeferredShading;
 class SSAO: private PostProcessing
 {
 	static unsigned int ssaoFBO;
-	static Texture noiseTexture, ssaoColorBuffer;
+	static InternalTexture2D noiseTexture, ssaoColorBuffer;
 
 	static Shader shaderSSAO;
 	static Shader blure;
 	friend class DeferredShading;
 
 	static unsigned int BluredFBO;
-	static Texture BluredTexture;
+	static InternalTexture2D BluredTexture;
 
 	static std::vector<Vector3> ssaoNoise;
 	static std::vector<Vector3> ssaoKernel;

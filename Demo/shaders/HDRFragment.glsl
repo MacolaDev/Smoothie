@@ -52,4 +52,4 @@ void main()
 	// gamma correction
 	mapped = pow(mapped, vec3(1.0 / gamma));
 	FragColor = vec4(mapped, 1.0);
-}
+}

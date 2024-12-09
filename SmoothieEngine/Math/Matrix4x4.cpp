@@ -1,4 +1,5 @@
 #include "Matrix4x4.h"
+#include "Matrix3x3.h"
 #include "SmoothieMath.h"
 #include <iostream>
 
@@ -109,7 +110,7 @@ void SmoothieMath::Matrix4x4::inverse()
 	//One over determinant
 	float ood = 1.0f / (Dot1);
 	
-	
+
 
 	matrix[0][0] = Row0.x * ood, matrix[0][1] = Row0.y * ood, matrix[0][2] = Row0.z * ood, matrix[0][3] = Row0.w * ood;
 	matrix[1][0] = Row1.x * ood, matrix[1][1] = Row1.y * ood, matrix[1][2] = Row1.z * ood, matrix[1][3] = Row1.w * ood;
@@ -160,6 +161,152 @@ void SmoothieMath::Matrix4x4::transpose()
 	matrix[3][1] = temp[3][1];
 	matrix[3][2] = temp[3][2];
 	matrix[3][3] = temp[3][3];
+}
+
+SmoothieMath::Matrix3x3 SmoothieMath::Matrix4x4::normalMatrix() const
+{
+
+	const float determinant =
+		+ matrix[0][0] * ((matrix[1][1] * matrix[2][2]) - (matrix[2][1] * matrix[1][2]))
+		- matrix[1][0] * ((matrix[0][1] * matrix[2][2]) - (matrix[2][1] * matrix[0][2]))
+		+ matrix[2][0] * ((matrix[0][1] * matrix[1][2]) - (matrix[1][1] * matrix[0][2]));
+	if (determinant == 0.0f) return Matrix3x3();
+	
+	const Vector3 row0 =
+	{
+		+((matrix[1][1] * matrix[2][2]) - (matrix[2][1] * matrix[1][2])) / determinant,
+		-((matrix[0][1] * matrix[2][2]) - (matrix[2][1] * matrix[0][2])) / determinant,
+		+((matrix[0][1] * matrix[1][2]) - (matrix[1][1] * matrix[0][2])) / determinant
+	};
+
+	const Vector3 row1 =
+	{
+		-((matrix[1][0] * matrix[2][2]) - (matrix[2][0] * matrix[1][2])) / determinant,
+		+((matrix[0][0] * matrix[2][2]) - (matrix[2][0] * matrix[0][2])) / determinant,
+		-((matrix[0][0] * matrix[1][2]) - (matrix[1][0] * matrix[0][2])) / determinant
+	};
+
+	const Vector3 row2 =
+	{
+		+((matrix[1][0] * matrix[2][1]) - (matrix[2][0] * matrix[1][1])) / determinant,
+		-((matrix[0][0] * matrix[2][1]) - (matrix[2][0] * matrix[0][1])) / determinant,
+		+((matrix[0][0] * matrix[1][1]) - (matrix[1][0] * matrix[0][1])) / determinant
+	};
+
+	return Matrix3x3(row0, row1, row2);
+}
+
+SmoothieMath::Vector3 SmoothieMath::Matrix4x4::getScaleComponent() const
+{
+	const float s_x = std::sqrt(matrix[0][0] * matrix[0][0] + matrix[0][1] * matrix[0][1] + matrix[0][2] * matrix[0][2]);
+	const float s_y = std::sqrt(matrix[1][0] * matrix[1][0] + matrix[1][1] * matrix[1][1] + matrix[1][2] * matrix[1][2]);
+	const float s_z = std::sqrt(matrix[2][0] * matrix[2][0] + matrix[2][1] * matrix[2][1] + matrix[2][2] * matrix[2][2]);
+
+	return SmoothieMath::Vector3(s_x, s_y, s_z);
+}
+
+SmoothieMath::Vector3 SmoothieMath::Matrix4x4::getEulerAnglesComponent() const
+{
+
+	const float s_x = std::sqrt(matrix[0][0] * matrix[0][0] + matrix[0][1] * matrix[0][1] + matrix[0][2] * matrix[0][2]);
+	const float s_y = std::sqrt(matrix[1][0] * matrix[1][0] + matrix[1][1] * matrix[1][1] + matrix[1][2] * matrix[1][2]);
+	const float s_z = std::sqrt(matrix[2][0] * matrix[2][0] + matrix[2][1] * matrix[2][1] + matrix[2][2] * matrix[2][2]);
+
+	const float r = sqrtf(1.0f + (matrix[0][0] / s_x) - (matrix[1][2] / s_y) + (matrix[2][1] / s_z));
+	
+	const float q_w = r / 2.0f;
+	const float q_y = ((matrix[2][0] / s_z) - (matrix[0][1] / s_x)) / (4.0f * q_w);
+
+	const float q_x = ((matrix[1][0] / s_y) - (matrix[0][2] / s_x)) / (4.0f * q_y);
+	const float q_z = ((matrix[1][1] / s_y) - (matrix[2][2] / s_x)) / (4.0f * q_y);
+
+	const float x = acosf(q_x / sqrtf(1 - q_w * q_w)) * 180.0f / pi;
+	const float y = acosf(q_y / sqrtf(1 - q_w * q_w)) * 180.0f / pi;
+	const float z = acosf(q_z / sqrtf(1 - q_w * q_w)) * 180.0f / pi;
+	
+	return { x, y, z };
+
+	if (std::abs(matrix[0][1] / s_x) != 1.0f)
+	{ 
+		const float Ry = asinf(-matrix[0][1] / s_x);
+		const float Rx = asinf( matrix[1][1] / (s_y * cosf(Ry)));
+		const float Rz = asinf(-matrix[0][2] / (s_x * cosf(Ry)));
+		
+		return 
+		{ 
+			Rx * 180.0f / pi,
+			Ry * 180.0f / pi, 
+			Rz * 180.0f / pi 
+		};
+	}
+	else
+	{
+		std::cout << "Aaaa" << std::endl;
+	}
+	return { 0, 0, 0 };
+	/*if (std::abs(matrix[0][1]) == -1.0f)
+	{
+		const float roll = 0.0f;
+		const float pitch = 90.0f;
+		const float yaw = atan2(matrix[1][0], matrix[2][0]) * 180.0f/pi;
+		return { yaw, pitch, roll };
+	}
+
+	if (std::abs(matrix[0][1]) == 1.0f)
+	{
+		const float roll = 0.0f;
+		const float pitch = -90.0f;
+		const float yaw = atan2(-matrix[1][0], -matrix[2][0]) * 180.0f / pi;
+		return { yaw, pitch, roll };
+	}
+	*/
+}
+
+SmoothieMath::Vector3 SmoothieMath::Matrix4x4::getPositionComponent() const
+{
+	return SmoothieMath::Vector3(matrix[3][0], -matrix[3][2], matrix[3][1]);
+}
+
+void SmoothieMath::Matrix4x4::transformMatrix(
+	const SmoothieMath::Vector3& T, 
+	const SmoothieMath::Vector3& R,
+	const SmoothieMath::Vector3& S)
+{
+	const float Rx = R.x * pi / 180.0f;
+	const float Ry = R.y * pi / 180.0f;
+	const float Rz = R.z * pi / 180.0f;
+
+	const Vector4 row0 = Vector4
+	(	
+		S.x *  cos(Ry) * cos(Rz),
+		S.y * (sin(Rx) * sin(Ry) * cos(Rz) - cos(Rx) * sin(Rz)),
+		S.z * (cos(Rx) * sin(Ry) * cos(Rz) + sin(Rx) * sin(Rz)),
+		T.x
+	);
+	
+	const Vector4 row1 = Vector4
+	(
+	   -S.x * sin(Ry),
+		S.y * sin(Rx) * cos(Ry),
+		S.z * cos(Rx) * cos(Ry),
+		T.z
+	);
+
+	const Vector4 row2 = Vector4
+	(
+		-S.x *  cos(Ry) * sin(Rz),
+		-S.y * (sin(Rx) * sin(Ry) * sin(Rz) + cos(Rx) * cos(Rz)),
+		-S.z * (cos(Rx) * sin(Ry) * sin(Rz) - sin(Rx) * cos(Rz)),
+		-T.y
+	);
+
+	const Vector4 row3 = { 0.0f, 0.0f, 0.0f, 1.0f };
+
+	matrix[0][0] = row0.x, matrix[1][0] = row0.y, matrix[2][0] = row0.z, matrix[3][0] = row0.w;
+	matrix[0][1] = row1.x, matrix[1][1] = row1.y, matrix[2][1] = row1.z, matrix[3][1] = row1.w;
+	matrix[0][2] = row2.x, matrix[1][2] = row2.y, matrix[2][2] = row2.z, matrix[3][2] = row2.w;
+	matrix[0][3] = row3.x, matrix[1][3] = row3.y, matrix[2][3] = row3.z, matrix[3][3] = row3.w;
+
 }
 
 Matrix4x4 SmoothieMath::Matrix4x4::operator*(const Matrix4x4& m2)

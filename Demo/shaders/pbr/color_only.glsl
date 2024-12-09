@@ -7,10 +7,12 @@ layout (location = 2) in vec2 aTexCoord;
 layout (location = 3) in vec4 aTangents;
 layout (location = 4) in vec4 aBitangents;
 
-layout (std140, binding = 0) uniform Matrices
+layout (std140, binding = 0) uniform Standard
 {
     mat4 projectionMatrix;
     mat4 viewMatrix;
+	vec3 viewPos;
+    mat4 projectionViewMatrix;
 };
 
 uniform mat4 modelMatrix;
@@ -34,9 +36,8 @@ void main()
     
     TexCoord = aTexCoord;
     FragPos = modelMatrix * vec4(aPos, 1);
-    //mat3 normalMatrix = mat3(transpose(inverse(modelMatrix)));
-    vertexNormals =  normalize(-normalMatrix * vec3(unpackNormals(aNormals)));
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(aPos, 1.0); 
+    vertexNormals =  normalize(normalMatrix * unpackNormals(aNormals));
+    gl_Position = projectionViewMatrix * modelMatrix * vec4(aPos, 1.0); 
 }
 #endif
 

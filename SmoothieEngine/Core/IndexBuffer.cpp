@@ -1,6 +1,7 @@
 #include "IndexBuffer.h"
 #include "SmoothieDebug.h"
 #include <iostream>
+#include <GL/glew.h>
 IndexBuffer::IndexBuffer(unsigned int* data, int size)
 {
 	IndexData = data;

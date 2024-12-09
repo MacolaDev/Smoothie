@@ -35,7 +35,7 @@ ShadowMaps::ShadowMaps(int imageWidth, int imageHight, int screenWidth, int scre
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	shader = Shader("shaders/shadowMapVertex.glsl", "shaders/shadowMapFragment.glsl");
+	//shader = Shader("shaders/shadowMapVertex.glsl", "shaders/shadowMapFragment.glsl");
 
 
 	//Lighting stuff

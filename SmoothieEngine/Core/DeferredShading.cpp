@@ -2,13 +2,19 @@
 #include "GL/glew.h"
 #include "Skybox.h"
 #include "SSAO.h"
+#include "Effects/SSR.h"
+
 unsigned int DeferredShading::gBuffer = 0;
-unsigned int DeferredShading::TempRenderBuffer = 0;
+unsigned int DeferredShading::gBufferRenderbuffer = 0;
 
 unsigned int DeferredShading::gPosition = 0;
 unsigned int DeferredShading::gNormal = 0;
 unsigned int DeferredShading::gAlbedoSpec = 0;
 unsigned int DeferredShading::gMRAO = 0;
+
+unsigned int DeferredShading::lightPassRenderbuffer = 0;
+unsigned int DeferredShading::lightPassFramebuffer = 0;
+unsigned int DeferredShading::lightPassFramebufferTexture = 0;
 
 Shader DeferredShading::gBufferShader;
 Shader DeferredShading::lightingPassShader;
@@ -79,12 +85,33 @@ void DeferredShading::generateBuffersTextures()
 	lightingPassShader.setInt("prefilterMap", 5);
 	lightingPassShader.setInt("brdfLUT", 6);
 	lightingPassShader.setInt("dynamicSSA0", 7);
+	lightingPassShader.setInt("SSR", 8);
 
-
-	glGenRenderbuffers(1, &TempRenderBuffer);
-	glBindRenderbuffer(GL_RENDERBUFFER, TempRenderBuffer);
+	//gBuffer renderbuffer
+	glGenRenderbuffers(1, &gBufferRenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, gBufferRenderbuffer);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, TempRenderBuffer);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, gBufferRenderbuffer);
+	
+	//light pass framebuffer
+	glGenFramebuffers(1, &lightPassFramebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, lightPassFramebuffer);
+
+	//light pass framebuffer texture
+	glGenTextures(1, &lightPassFramebufferTexture);
+	glBindTexture(GL_TEXTURE_2D, lightPassFramebufferTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, lightPassFramebufferTexture, 0);
+	
+
+	//Light pass renderbuffer
+	glGenRenderbuffers(1, &lightPassRenderbuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, lightPassRenderbuffer);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, lightPassRenderbuffer);
+	
 }
 
 void DeferredShading::initilize()
@@ -94,19 +121,19 @@ void DeferredShading::initilize()
 
 void DeferredShading::bindGBuffer()
 {
-	glBindRenderbuffer(GL_RENDERBUFFER, TempRenderBuffer);
+	glBindRenderbuffer(GL_RENDERBUFFER, gBufferRenderbuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, gBuffer);
 	glClearColor(0.0, 0.0, 0.0, 1.0); // black so it won’t leak in g-buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 }
 
 void DeferredShading::renderPBR()
 {
-	glBindRenderbuffer(GL_RENDERBUFFER, 0);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindRenderbuffer(GL_RENDERBUFFER, lightPassRenderbuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, lightPassFramebuffer);
+
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	
+
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, gPosition);
 	
@@ -131,13 +158,24 @@ void DeferredShading::renderPBR()
 	glActiveTexture(GL_TEXTURE7);
 	glBindTexture(GL_TEXTURE_2D, SSAO::BluredTexture.ID);
 
+	glActiveTexture(GL_TEXTURE8);
+	glBindTexture(GL_TEXTURE_2D, SSR::bluredTarget.ID);
+
 	lightingPassShader.use();
 	
 	RenderQuad();
 
-	//Copying depth-map from gBuffer to default framebuffer
+	//Copying depth-map from gBuffer to lightPassFramebuffer framebuffer
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, gBuffer);
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // write to default framebuffer
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, lightPassFramebuffer);
 	glBlitFramebuffer(0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, 0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
+}
+
+void DeferredShading::finilize()
+{
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, lightPassFramebuffer);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); 
+	glBlitFramebuffer(0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, 0, 0, SmoothieCore::SCR_WIDTH, SmoothieCore::SCR_HEIGHT, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }

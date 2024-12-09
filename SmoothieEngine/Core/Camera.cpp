@@ -1,5 +1,6 @@
 #include "Camera.h"
 using namespace Smoothie;
+
 void Camera::updateCameraPosition(const Vector3& position)
 {
 	cameraPos = position;
@@ -13,6 +14,7 @@ void Camera::updateCameraFront(const Vector3& front)
 void Camera::updateCameraMatrix()
 {
 	cameraMatrix.lookAtMatrix(cameraPos, cameraPos + cameraFront, cameraUp);
+	projectionViewMatrix = cameraMatrix * projectionMatrix;
 }
 
 void Smoothie::Camera::updateProjectionMatrix(float fovy, float aspec, float zNear, float zFar)
@@ -29,6 +31,7 @@ Camera::Camera() :cameraPos(0, 0, 0), cameraFront(1, 1, 1), cameraUp(0, 1, 0), z
 {
 	cameraMatrix = Matrix4x4();
 	projectionMatrix = Matrix4x4();
+	projectionViewMatrix = Matrix4x4();
 }
 
 Camera::Camera(const Vector3& cameraPos, const Vector3& cameraFront, const Vector3& cameraUp, float fovy, float aspec, float zNear, float zFar)
@@ -42,6 +45,9 @@ Camera::Camera(const Vector3& cameraPos, const Vector3& cameraFront, const Vecto
 
 	this->fovy = fovy;
 	this->aspec = aspec;
+
 	cameraMatrix.lookAtMatrix(cameraPos, cameraPos + cameraFront, cameraUp);
 	projectionMatrix.perspectiveProjection(fovy, aspec, zNear, zFar);
+	projectionViewMatrix = cameraMatrix * projectionMatrix;
+
 }

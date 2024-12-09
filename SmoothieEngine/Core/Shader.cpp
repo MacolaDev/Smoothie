@@ -74,173 +74,187 @@ std::string Shader::readSignleShaderSourceFile(std::string source, ShaderType ty
 	return fileContent;
 }
 
-Shader::Shader(const std::string& vertexShaderSourceFile, const std::string& fragmentShaderSourceFIle)
+Shader::Shader(const std::string& singleShaderSourceFile, bool initilizeOpengl): ShaderFile(singleShaderSourceFile)
 {
-	auto string = readSourceShaderFile(vertexShaderSourceFile);
-	const char* vertexShaderSource = string.c_str();
-
-	//Creates vertex shader object
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
+	this->file = singleShaderSourceFile;
+	if (loadedShaders.isAlreadyLoaded(file)) 
+	{ 
+		Shader* original = loadedShaders.getResource(file);
+		this->fragmentShaderID = original->fragmentShaderID;
+		this->vertexShaderID = original->vertexShaderID;
+		this->ID = original->ID;
+		this->pass = original->pass;
 
-	int success; char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
+		if (initilizeOpengl != false) generateOpenGLData();
+		return;
+	};
 
-
-	//Creates fragment shader object
-	string = readSourceShaderFile(fragmentShaderSourceFIle);
-	const char* fragmentShaderSource = string.c_str();
-
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-
-
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	//Shader program object
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-
-	//Attaches and links shaderProgram
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	//Once linked, shaders should be deleted
-	glDeleteShader(vertexShader);
-	SmoothieDebug(&vertexShader);
-	glDeleteShader(fragmentShader);
-	SmoothieDebug(&fragmentShader);
-	ID = shaderProgram;
-
-	if (fragmentShaderSourceFIle.find("pbr") != std::string::npos)
-	{
-		pass = ShaderPass::PASS1;
-	}
-	else
-	{
-		pass = ShaderPass::PASS2;
-	}
+	isInitilized = false;
+	
+	if (initilizeOpengl == false) return;
+	
+	generateOpenGLData();
+	
 }
 
-Shader::Shader(const std::string& singleShaderSourceFile)
+int Shader::VertCompInfo() const
 {
-	auto vertexShaderSourceCode = readSignleShaderSourceFile(singleShaderSourceFile, ShaderType::VERTEX_SHADER);
-	const char* vertexShaderSource = (vertexShaderSourceCode).c_str();
-
-	//Creates vertex shader object
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-
 	int success; char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-
-	//Creates fragment shader object
-	std::string fragmentShaderSourceCode = readSignleShaderSourceFile(singleShaderSourceFile, ShaderType::FRAGMENT_SHADER);
-	const char* fragmentShaderSource = (fragmentShaderSourceCode).c_str();
-
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-
-
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
-
-	//Shader program object
-	unsigned int shaderProgram;
-	shaderProgram = glCreateProgram();
-
-	//Attaches and links shaderProgram
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	//Once linked, shaders should be deleted
-	glDeleteShader(vertexShader);
-	SmoothieDebug(&vertexShader);
-	glDeleteShader(fragmentShader);
-	SmoothieDebug(&fragmentShader);
-	ID = shaderProgram;
-
-	if (singleShaderSourceFile.find("pbr") != std::string::npos)
+	glGetShaderiv(vertexShaderID, GL_COMPILE_STATUS, &success);
+	if (!success) 
 	{
-		pass = ShaderPass::PASS1;
+		glGetShaderInfoLog(vertexShaderID, 512, NULL, infoLog);
+		std::cout << __FUNCTION__": can't compile shader \"" + file +"\"\n" << infoLog << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+int Shader::FragCompInfo() const
+{
+	int success; char infoLog[512];
+	glGetShaderiv(fragmentShaderID, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShaderID, 512, NULL, infoLog);
+		std::cout << __FUNCTION__": can't compile shader \"" + file + "\"\n" << infoLog << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+int Shader::GeomCompInfo() const
+{
+	int success; char infoLog[512];
+	glGetShaderiv(geometryShaderID, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(geometryShaderID, 512, NULL, infoLog);
+		std::cout << __FUNCTION__": can't compile shader \"" + file + "\"\n" << infoLog << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+int Shader::LinkInfo() const
+{
+	int success; char infoLog[512];
+	glGetProgramiv(ID, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(ID, 512, NULL, infoLog);
+		std::cout << __FUNCTION__": can't link shader \"" + file + "\"\n" << infoLog << std::endl;
+		return 1;
+	}
+	return 0;
+}
+
+void Shader::generateOpenGLData()
+{
+	const char* vertexShaderSource = (vertexShader).c_str();
+	vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
+	glShaderSource(vertexShaderID, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShaderID);
+	if(VertCompInfo()) return;
+
+	const char* fragmentShaderSource = (fragmentShader).c_str();
+	fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShaderID, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShaderID);
+	if(FragCompInfo()) return;
+	
+	if (hasGeometryShader) 
+	{
+		const char* geometryShaderSource = (geometryShader).c_str();
+		geometryShaderID = glCreateShader(GL_GEOMETRY_SHADER);
+		glShaderSource(geometryShaderID, 1, &fragmentShaderSource, NULL);
+		glCompileShader(geometryShaderID);
+		if (GeomCompInfo()) return; 
+	}
+
+	ID = glCreateProgram();
+	SmoothieDebug(&ID);
+	glAttachShader(ID, vertexShaderID);
+	glAttachShader(ID, fragmentShaderID);
+	
+	if (hasGeometryShader)
+	{
+		glAttachShader(ID, geometryShaderID);
+	}
+
+	glLinkProgram(ID);
+	if(LinkInfo()) return;
+
+	glDeleteShader(vertexShaderID);
+	glDeleteShader(fragmentShaderID);
+
+	if (hasGeometryShader)
+	{
+		glDeleteShader(geometryShaderID);
+	}
+
+	
+	if (file.find("pbr") != std::string::npos)
+	{
+		pass = ShaderPass::gBuffer;
 	}
 	else
 	{
-		pass = ShaderPass::PASS2;
+		pass = ShaderPass::LightPass;
 	}
+
+	isInitilized = true;
+	
+	loadedShaders.addResource(file, *this);
 }
 
 void Shader::use()
 {
-	glUseProgram(ID);
-	SmoothieDebug(&ID);
+	if (isInitilized) 
+	{
+		glUseProgram(ID);
+	}
+	else
+	{
+		generateOpenGLData();
+	}
 }
 
-void Shader::setBool(const std::string& name, bool value)
+void Shader::setBool(const std::string& name, bool value) const
 {
 	glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
 }
 
-void Shader::setInt(const std::string& name, int value) 
+void Shader::setInt(const std::string& name, int value) const 
 {
-	int location = glGetUniformLocation(ID, name.c_str());
+	const int location = glGetUniformLocation(ID, name.c_str());
 	glUniform1i(location, value);
-	if (glGetError() != 0) std::cout << __FUNCTION__" error" << std::endl;
 }
 
-void Shader::setFloat(const std::string& name, float value) 
+void Shader::setFloat(const std::string& name, float value) const
 {
 	glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
-void Shader::setMatrix4x4(const std::string& name, float* value)
+void Shader::setMatrix4x4(const std::string& name, float* value) const
 {
 	
 	const char* c_string = name.c_str();
-	int location = glGetUniformLocation(ID, c_string);
+	const int location = glGetUniformLocation(ID, c_string);
 	glUniformMatrix4fv(location, 1, GL_FALSE, value);
 }
 
-void Shader::setMatrix3x3(const std::string& name, float* value)
+void Shader::setMatrix3x3(const std::string& name, float* value) const
 {
 	const char* c_string = name.c_str();
-	int location = glGetUniformLocation(ID, c_string);
+	const int location = glGetUniformLocation(ID, c_string);
 	glUniformMatrix3fv(location, 1, GL_FALSE, value);
 }
 
-void Shader::setVector3(const std::string& name, const Vector3& value)
+void Shader::setVector3(const std::string& name, const Vector3& value) const
 {
-	int location = glGetUniformLocation(ID, name.c_str());
-	if (location != -1) {
-
-		glUniform3fv(location, 1, value.dataPointer());
+	const int location = glGetUniformLocation(ID, name.c_str());
+	glUniform3fv(location, 1, value.dataPointer());
 		
-	}
-	else {
-		//std::cout << __FUNCTION__": location is -1 " << std::endl;
-	}
 }

@@ -12,7 +12,9 @@ find_package(PythonLibs REQUIRED)
 add_subdirectory(SmoothieEngine)
 add_subdirectory(Demo)
 add_subdirectory(Exporter)
+add_subdirectory(SmoothieEditor)
 
 add_dependencies(Demo SmoothieEngine)
+add_dependencies(SmoothieEditor SmoothieEngine)
 
 link_libraries()

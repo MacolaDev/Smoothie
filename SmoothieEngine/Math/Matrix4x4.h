@@ -3,7 +3,7 @@
 #include "Vector3.h"
 
 namespace SmoothieMath {
-class Matrix3x3;
+	class Matrix3x3;
 	class Matrix4x4
 	{
 		float matrix[4][4];
@@ -38,6 +38,22 @@ class Matrix3x3;
 
 		void transpose();
 		
+		//Returns normal matrix out of model matrix
+		SmoothieMath::Matrix3x3 normalMatrix() const;
+
+		SmoothieMath::Vector3 getScaleComponent() const;
+
+		//Returns yaw, pitch, roll (rotation around X, Y and Z components respectuffuly) in degrees
+		SmoothieMath::Vector3 getEulerAnglesComponent() const;
+
+		SmoothieMath::Vector3 getPositionComponent() const;
+
+		//Takes XYZ position, XYZ euler angles in degrees and XYZ scale to generate transformation matrix 
+		void transformMatrix(
+			const SmoothieMath::Vector3& position, 
+			const SmoothieMath::Vector3& rotationEuler,
+			const SmoothieMath::Vector3& scale);
+
 		//TODO: Find better solution 
 		Matrix4x4 operator * (const Matrix4x4& other);
 		Vector4 operator [] (int index) const;

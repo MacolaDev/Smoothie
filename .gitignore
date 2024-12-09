@@ -34,3 +34,7 @@ Demo/resources/SmoothieDemoScene/
 Exporter/SmoothieExporter.pdb
 Exporter/export_script_blender.py
 Exporter/Debug/
+Demo/SmoothieEditor.exe
+Demo/SmoothieEditor.pdb
+SmoothieEditor/Debug
+SmoothieEditor/SmoothieEditor.dir

@@ -12,6 +12,8 @@ layout (std140, binding = 0) uniform Standard
 {
     mat4 projectionMatrix;
     mat4 viewMatrix;
+	vec3 viewPos;
+    mat4 projectionViewMatrix;
 };
 
 uniform mat4 modelMatrix;
@@ -22,7 +24,7 @@ vec3 unpackNormals(vec4 packedNormal)
     float x = packedNormal.x/127 - 1;
     float y = packedNormal.y/127 - 1;
     float z = packedNormal.z/127 - 1;
-    return vec3(x, -z, y); 
+    return vec3(x, y, z); 
 }
 
 out vec2 TexCoord;
@@ -36,20 +38,16 @@ void main()
     
     TexCoord = aTexCoord;
     FragPos = modelMatrix * vec4(aPos, 1);
-    //mat3 normalMatrix = mat3(transpose(inverse(modelMatrix)));
     vertexNormals =  normalize(normalMatrix * vec3(unpackNormals(aNormals)));
+	
+	vec3 T = normalize(normalMatrix * unpackNormals(aTangents));
+	vec3 B = normalize(normalMatrix * unpackNormals(aBitangents));
+	vec3 N = normalize(normalMatrix * unpackNormals(aNormals));
 
-    //T, B and N should be multipled with normal matrix 
-    vec3 T = normalize(vec3(modelMatrix * vec4(normalMatrix * unpackNormals(aTangents), 0.0)));
-    vec3 B = normalize(vec3(modelMatrix * vec4(normalMatrix * unpackNormals(aBitangents), 0.0)));
-    vec3 N = normalize(vec3(modelMatrix * vec4(normalMatrix * unpackNormals(aNormals), 0.0)));
     TBN = mat3(T, B, N); 
-    gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(aPos, 1.0); 
+    gl_Position = projectionViewMatrix * FragPos; 
 }
 #endif
-
-
-
 
 //Fragment shader
 #ifdef FRAGMENT_SHADER

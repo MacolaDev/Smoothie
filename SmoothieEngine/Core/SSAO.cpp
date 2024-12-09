@@ -4,11 +4,11 @@
 #include "PostProcessing.h"
 
 unsigned int SSAO::ssaoFBO = 0;
-Texture SSAO::noiseTexture;
-Texture SSAO::ssaoColorBuffer;
+InternalTexture2D SSAO::noiseTexture;
+InternalTexture2D SSAO::ssaoColorBuffer;
 
 unsigned int SSAO::BluredFBO;
-Texture SSAO::BluredTexture;
+InternalTexture2D SSAO::BluredTexture;
 
 std::vector<Vector3> SSAO::ssaoNoise;
 std::vector<Vector3> SSAO::ssaoKernel;
@@ -19,12 +19,12 @@ Shader SSAO::blure;
 void SSAO::generateSSAOTextures(int SCR_WIDTH, int SCR_HEIGHT)
 {
 	generateNoise();
-	noiseTexture = Texture(&ssaoNoise[0].x, 4, 4, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
+	noiseTexture = InternalTexture2D(&ssaoNoise[0].x, 4, 4, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
 
 	glGenFramebuffers(1, &ssaoFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, ssaoFBO);
 	
-	ssaoColorBuffer = Texture(nullptr, SCR_WIDTH, SCR_HEIGHT, RGB, RGB8);
+	ssaoColorBuffer = InternalTexture2D(nullptr, SCR_WIDTH, SCR_HEIGHT, RGB, RGB8);
 	ssaoColorBuffer.bindToFramebuffer(ssaoFBO, 0);
 
 	shaderSSAO = Shader("shaders/standard/SSAO.glsl");
@@ -36,7 +36,7 @@ void SSAO::generateSSAOTextures(int SCR_WIDTH, int SCR_HEIGHT)
 	glGenFramebuffers(1, &BluredFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, BluredFBO);
 	
-	BluredTexture = Texture((float*)(nullptr), SCR_WIDTH, SCR_HEIGHT, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
+	BluredTexture = InternalTexture2D((float*)(nullptr), SCR_WIDTH, SCR_HEIGHT, TextureFormat::RGB, TextureInternalFormatFloat::RGBA32);
 	BluredTexture.bindToFramebuffer(BluredFBO, 0);
 
 	blure = Shader("shaders/blure/ssaoblure.glsl");

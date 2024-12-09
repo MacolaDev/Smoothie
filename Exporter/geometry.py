@@ -11,15 +11,24 @@ class FileBuffer:
     vertexNormals: list
     vertexTangents: list
     vertexBitangents: list
+    
+    use_vertex_colors: bool
     vertexColors: list
 
     numberOfIndices: int
     indices: list
 
+    materialIndices: list
+
 #Buffer used to process data in SmoothieExporter
 class ProcessBuffer:
     indexes: list
     data: list
+
+class matIndexes:
+    vertex_index: list
+    material_index: list
+    
 
 def WriteGeometryFile(filepath: str):
 
@@ -100,7 +109,34 @@ def WriteGeometryFile(filepath: str):
     mesh_data.vertices.foreach_get('normal', normals)
     filebuffer.vertexNormals = normals
     
-    #TODO: Add vector colors buffers
+    #Material indices
+    material_vertex_data = [0] * 3 * len(mesh_data.polygons) #Assumed that mesh only has triangles.
+    material_index_data = [0] * len(mesh_data.polygons)
+
+    mesh_data.polygons.foreach_get("vertices", material_vertex_data)
+    mesh_data.polygons.foreach_get("material_index", material_index_data)
+
+    mat_indices = matIndexes
+    mat_indices.material_index = material_index_data
+    mat_indices.vertex_index = material_vertex_data
+    filebuffer.materialIndices = SmoothieExporter.calculate_mat_indexes(mat_indices)
+
+
+    #Vertex colors
+    color_attributes = mesh_data.color_attributes.active_color
+    use_vertex_colors = False
+    color_data = [0] * 4 * len(mesh_data.vertices)
+
+    if color_attributes != None:
+        domain = color_attributes.domain
+        if domain == "POINT":
+            use_vertex_colors = True
+            color_attributes.data.foreach_get("color", color_data)
+        else:
+            print("Invalid domain for \"" + color_attributes.name + "\". Only per-vertex data supported!")
+    
+    filebuffer.use_vertex_colors = use_vertex_colors
+    filebuffer.vertexColors = color_data
 
     SmoothieExporter.write_geometry_file(filebuffer)
     

@@ -11,9 +11,9 @@ uniform sampler2D gNormal;
 uniform sampler2D texNoise;
 uniform vec3 samples[64];
 
-float radius = 0.5f;
-float bias = 0.025;
-int kernelSize = 32;
+float radius = 0.2f;
+float bias = 0.055;
+int kernelSize = 64;
 
 layout (std140, binding = 0) uniform Standard
 {

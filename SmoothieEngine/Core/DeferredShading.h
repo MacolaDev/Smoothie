@@ -6,10 +6,14 @@
 
 class DeferredShading: private PostProcessing
 {
-	static unsigned int TempRenderBuffer;
+	static unsigned int gBufferRenderbuffer;
+	static unsigned int lightPassRenderbuffer;
 public:
 	static unsigned int gBuffer;
 	static unsigned int gPosition, gNormal, gAlbedoSpec, gMRAO;
+	
+	static unsigned int lightPassFramebuffer;
+	static unsigned int lightPassFramebufferTexture;
 
 	static Shader gBufferShader;
 	static Shader lightingPassShader;
@@ -21,6 +25,12 @@ public:
 	static void initilize();
 
 	static void bindGBuffer();
+
+	//Renders stuff from gBuffer and binds light pass 
 	static void renderPBR();
+
+	//Copies stuff from light pass into default framebuffer and renderbuffer.
+	//Must be called at the end of render pipeline.
+	static void finilize();
 };
 

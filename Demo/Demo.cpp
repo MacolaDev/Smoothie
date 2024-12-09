@@ -48,7 +48,7 @@ Demo::Demo()
 
     //Load scene
     demoScene = Smoothie::Scene("resources//DemoScene//Demo.sscene");
-    SmoothieCore::useScene(demoScene);
+    SmoothieCore::useScene(&demoScene);
 
     demoCamera = Smoothie::Camera(
         cameraPosition,
@@ -73,6 +73,7 @@ void Demo::render()
 {
     while (!glfwWindowShouldClose(window))
     {
+        glfwSwapInterval(0);
         currentFrame = (float)glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;

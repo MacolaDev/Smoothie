@@ -2,6 +2,8 @@
 #include "ParseXML.h"
 #include "SmoothieMath.h"
 #include <sstream>
+#include <GL/glew.h>
+
 Vector4 getVector4FromString(const std::string& string)
 {
 	std::istringstream data(string);
@@ -27,9 +29,38 @@ Smoothie::Scene::Scene()
 {
 }
 
-Smoothie::Scene::Scene(const std::string& file)
+using ModelVectorPtr = std::vector<Smoothie::Model>*;
+static std::mutex ModelMutex;
+using namespace Smoothie;
+
+static void LoadModelsAsync(ModelVectorPtr pbrModels, ModelVectorPtr otherModels, Element modelMatrixElement, Element modelFileElement)
 {
 
+	Model model = Model(modelFileElement.textContent);
+	Matrix4x4 modelMatrix = getModelMatrix(modelMatrixElement);
+	model.modelMatrix = modelMatrix;
+
+	//calculate normal matrix
+	Matrix4x4 normalMatrix = Matrix4x4(modelMatrix);
+	normalMatrix.inverse();
+	normalMatrix.transpose();
+	model.normalMatrix = Matrix3x3(normalMatrix);
+
+	std::lock_guard<std::mutex> lock(ModelMutex);
+
+	if (model.shader.pass == ShaderPass::gBuffer)
+	{
+		pbrModels->push_back(model);
+	}
+	else
+	{
+		otherModels->push_back(model);
+	}
+}
+
+Smoothie::Scene::Scene(const std::string& file)
+{
+	glewInit();
 	sceneFile = file;
 	//Parse xml data
 	ParseXML data = ParseXML(file);
@@ -44,39 +75,84 @@ Smoothie::Scene::Scene(const std::string& file)
 	std::vector<Element> models = data.getElement("models").children;
 	for (int i = 0; i < models.size(); i++)
 	{
-		Element model_matrix_element = models[i].children[0];
-		Element model_file = models[i].children[1];
-		
-		Model model = Model(model_file.textContent);
-		Matrix4x4 modelMatrix = getModelMatrix(model_matrix_element);
-		model.modelMatrix = modelMatrix;
-		
-		//calculate normal matrix
-		Matrix4x4 normalMatrix = Matrix4x4(modelMatrix);
-		normalMatrix.inverse();
-		normalMatrix.transpose();
-		model.normalMatrix = Matrix3x3(normalMatrix);
 
-		if (model.shader.pass == ShaderPass::PASS1) 
+		Element* model_file = models[i].getChild("file");
+		if (model_file == nullptr) { continue; }
+
+		//modelFutures.push_back(std::async(std::launch::async, LoadModelsAsync, &pbrSceneModels, &OtherSceneModels, model_matrix_element, model_file));
+		Model model = Model(model_file->textContent);
+		
+		
+		Element* matrix = models[i].getChild("matrix");
+		Element* position = models[i].getChild("position");
+		Element* scale = models[i].getChild("scale");
+		Element* rotation = models[i].getChild("rotation");
+		
+		if (position and rotation and scale)
 		{
-			pbrSceneModels.push_back(model);
+			model.setModelPosition(position->getVector3());
+			model.setModelScale(scale->getVector3());
+			model.setModelRotationEuler(rotation->getVector3());
+			model.updateModelTransformMatrix();
+		}
+		if (matrix) 
+		{
+			Matrix4x4 modelMatrix = getModelMatrix(*matrix);
+			model.modelMatrix = modelMatrix;
+		
+			//calculate normal matrix
+			Matrix4x4 normalMatrix = Matrix4x4(modelMatrix);
+			normalMatrix.inverse();
+			normalMatrix.transpose();
+			model.normalMatrix = Matrix3x3(normalMatrix);
+		}
+
+		if (model.shader.pass == ShaderPass::gBuffer) 
+		{
+			gBufferModels.push_back(model);
 		}
 		else 
 		{
-			OtherSceneModels.push_back(model);
+			lightPassModels.push_back(model);
 		}
 	}
 }
 
 int Smoothie::Scene::addModelToScene(const Model& model)
 {
-	if (model.shader.pass == ShaderPass::PASS1)
+	if (model.shader.pass == ShaderPass::gBuffer)
 	{
-		pbrSceneModels.push_back(model);
+		gBufferModels.push_back(model);
 	}
 	else
 	{
-		OtherSceneModels.push_back(model);
+		lightPassModels.push_back(model);
 	}
 	return 0;
+}
+
+void Smoothie::Scene::getAllModelNames(std::vector<std::string> & vectorToStoreNames)
+{
+	for (int i = 0; i < gBufferModels.size(); i++) 
+	{
+		vectorToStoreNames.push_back(std::to_string(i) + " " + gBufferModels[i].modelFilePath);
+	}
+}
+
+int Smoothie::Scene::getNumberOfModels()
+{
+	return static_cast<int>(gBufferModels.size());
+}
+
+Smoothie::Model* Smoothie::Scene::getModel(int ID)
+{
+	if (ID > gBufferModels.size()) 
+	{
+		std::cout << "Can't load model with index: " << ID << std::endl;
+		return nullptr;
+	}
+	else 
+	{
+		return &gBufferModels[ID];
+	}
 }

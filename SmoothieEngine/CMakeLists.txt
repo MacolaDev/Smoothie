@@ -11,6 +11,7 @@ target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/include/gl
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/include/stb)
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_SOURCE_DIR}/inc/GLFW/include)
 
+target_include_directories(SmoothieEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Core)
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/Math)
 target_include_directories(SmoothieEngine PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ResourceManager)

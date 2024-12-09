@@ -2,55 +2,67 @@
 #include <vector>
 #include <fstream>
 #include <string>
-int getIntFromFile(std::ifstream& file) {
-	char buffer[4];
-	file.read(buffer, 4);
-	int value = *(int*)buffer;
-	return value;
-}
+#include <GL/glew.h>
 
-int getUIntFromFile(std::ifstream& file) {
-	char buffer[4];
-	file.read(buffer, 4);
-	int value = *(unsigned int*)buffer;
-	return value;
-}
 
-float getFloatFromFile(std::ifstream& file) {
-	char buffer[4];
-	file.read(buffer, 4);
-	float value = *(float*)buffer;
-	return value;
-}
-
-Mesh::Mesh(std::string filepath)
+Mesh::Mesh(std::string filepath, bool initOpenGLFunctions) : GeometryFile(filepath)
 {	
-	auto file = std::ifstream(filepath, std::ios_base::binary);
-	
-	int vertexType = getIntFromFile(file);
-	numberOfvertices = getIntFromFile(file);
-	int vertexOffset = getIntFromFile(file);
-
-	numberOfIndices = getIntFromFile(file);
-	int indexOffset = getIntFromFile(file);
-	
-	file.seekg(vertexOffset);
-	if (vertexType == VertexBufferType::XYZNUVTB) 
-	{	
-		type = VertexBufferType::XYZNUVTB;
-		for (int i = 0; i < numberOfvertices; i++) {
-			char vertex[sizeof(xyznuvtb)];
-			file.read(vertex, sizeof(xyznuvtb));
-			xyznuvtbBuffer.push_back(vertex);
-		}
-	}
-
-	file.seekg(indexOffset);
-	sizeOfIndexBuffer = numberOfIndices;
-	for (int i = 0; i < sizeOfIndexBuffer; i++)
+	if (isAlreadyLoaded(filepath)) 
 	{
-		indexBufferFromFile.push_back(getUIntFromFile(file));
+		std::cout << "Already loaded: " << filepath << std::endl;
+		auto loaded = getResource(filepath);
+		this->VertexBufferObject = loaded->VertexBufferObject;
+		this->VertexAttributeObject = loaded->VertexAttributeObject;
+		this->IndexBufferObject = loaded->IndexBufferObject;
+		this->isInitilized = loaded->isInitilized;
+		return;
 	}
-	file.close();
+
+	if (initOpenGLFunctions) 
+	{ 
+		generateOpenGLdata(); 
+		return;
+	}
+	isInitilized = false;
+}
+
+void Mesh::generateOpenGLdata()
+{
+	//Vertex buffer data
+	glGenBuffers(1, &VertexBufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, numberOfVertices * vertexTypeLenght, vertexData.data(), GL_STATIC_DRAW);
+
+
+	//Vertex attribute object
+	VertexAttributeObject = vertexBufferBasePtr->generateAttributeObject();
+
+	//Index data
+	glGenBuffers(1, &IndexBufferObject);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferObject);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numberOfIndices * sizeof(unsigned int), indexData.data(), GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
+	isInitilized = true;
+	addResource(filepath, *this);
+}
+
+void Mesh::onRender()
+{
+	if (isInitilized) 
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, VertexBufferObject);
+		glBindVertexArray(VertexAttributeObject);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBufferObject);
+		glDrawElements(GL_TRIANGLES, numberOfIndices, GL_UNSIGNED_INT, 0);
+	}
+	else
+	{
+		generateOpenGLdata();
+	}
 }
 

@@ -6,6 +6,7 @@ import os
 import model as model_script
 import importlib
 importlib.reload(model_script)
+import math
 
 #Similar to model export class, only this one defines global
 class SceneProperties(bpy.types.PropertyGroup):
@@ -33,12 +34,18 @@ def vector4ToString(vector) -> str:
     y = vector[1]
     z = vector[2]
     w = vector[3]
-    return f"{x:.4f} {y:.4f} {z:.4f} {w:.4f}"
+    return f"{x:.6f} {y:.6f} {z:.6f} {w:.6f}"
+
+def vector3ToString(vector) -> str:
+    x = vector[0]
+    y = vector[1]
+    z = vector[2]
+    return f"{x:.6f} {y:.6f} {z:.6f}"
 
 def getLocalMatrix(model_node: ET.Element, object) -> ET.Element:
     
     #Change blender coordinate system to one that smoothie uses
-    new_matrix = mathutils.Matrix(((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, 0), (0, 0, 0, 1))) @ object.matrix_local
+    new_matrix = mathutils.Matrix(((1, 0, 0, 0), (0, 0, 1, 0), (0, -1, 0, 0), (0, 0, 0, 1))) @ object.matrix_world
     
     row0 = ET.SubElement(model_node, "row0")
     row0.text = vector4ToString(new_matrix[0])
@@ -94,10 +101,21 @@ def writeSceneFile():
         model.select_set(True)
         bpy.context.view_layer.objects.active = model
 
-        #Write matrix
+        
         model_node = ET.SubElement(models, "model")
-        model_matrix = ET.SubElement(model_node, "matrix")
-        getLocalMatrix(model_matrix, model)
+
+        model_position = ET.SubElement(model_node, "position")
+        model_position.text = vector3ToString(model.location)
+
+        model_scale = ET.SubElement(model_node, "scale")
+        model_scale.text = vector3ToString(model.scale)
+
+        model_rotation = ET.SubElement(model_node, "rotation")
+        model_rotation.text = vector3ToString((model.rotation_euler[0] * (180/math.pi), model.rotation_euler[1] * (180/math.pi), model.rotation_euler[2] * (180/math.pi)))
+
+        #Write matrix
+        # model_matrix = ET.SubElement(model_node, "matrix")
+        # getLocalMatrix(model_matrix, model)
         
         #Write path to model file
         model_file = ET.SubElement(model_node, "file")

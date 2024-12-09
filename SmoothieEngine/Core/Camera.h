@@ -10,8 +10,11 @@ namespace Smoothie {
 	{
 		Matrix4x4 cameraMatrix;
 		Matrix4x4 projectionMatrix;
+		Matrix4x4 projectionViewMatrix;
+
 		float zNear, zFar, fovy, aspec;
 		friend class SmoothieCore;
+
 	public:
 
 		Vector3 cameraPos, cameraFront, cameraUp;

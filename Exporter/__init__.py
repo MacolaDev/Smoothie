@@ -44,7 +44,7 @@ class SmoothieExporter(bpy.types.Panel):
         #Shader properties
         layout.label(text = "Shader properties")
         layout.prop(export, "double_sided")
-
+        layout.prop(export, "useAlpha")
 
         layout.prop(export, "selected_shader")
         obj.SmoothieShaderSettings.draw(layout)

@@ -44,13 +44,13 @@ HDR::HDR(int SCR_WIDTH, int SCR_HEIGHT)
 		std::cout << "Framebuffer not complete!" << std::endl;
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	shader = Shader("shaders/HDRVertex.glsl", "shaders/HDRFragment.glsl");
+	//shader = Shader("shaders/HDRVertex.glsl", "shaders/HDRFragment.glsl");
 	shader.use();
 	shader.setInt("HDRImage", 0);
 	shader.setInt("BrightSpots", 1);
 
 
-	pingPongShader = Shader("shaders/pingPongVertex.glsl", "shaders/pingPongFragment.glsl");
+	//pingPongShader = Shader("shaders/pingPongVertex.glsl", "shaders/pingPongFragment.glsl");
 	pingPongShader.use();
 	pingPongShader.setInt("HDRImage", 0);
 

@@ -7,12 +7,12 @@ class SmoothieCore
 {
 	static float aspect;
 	static bool isEngineReady;
-	
+	static float time;
 	//Camera that Smoothie uses
 	static Smoothie::Camera* camera;
 
 	//Scene that is being rendered
-	static Smoothie::Scene currentScene;
+	static Smoothie::Scene* currentScene;
 
 	//Standard uniform buffer that smoothie uses
 	static Smoothie::UniformBuffers standardBuffer;
@@ -21,6 +21,9 @@ class SmoothieCore
 
 public:
 	static int SCR_WIDTH, SCR_HEIGHT;
+
+	//Returns instance of currently loaded scene
+	static Smoothie::Scene* getSceneInstance();
 
 	//Updates engine with new width and height.
 	//This should be put inside render loop of your application. 
@@ -37,7 +40,8 @@ public:
 	static void useCamera(Smoothie::Camera& camera);
 	
 	//Active scene that Smoothie renders. Must be set.
-	static void useScene( const Smoothie::Scene& scene);
+	static void useScene(Smoothie::Scene* scene);
 
 	static void GlDebugOutputSynchronous();
+	
 };

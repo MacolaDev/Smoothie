@@ -3,32 +3,24 @@
 #include <iostream>
 #include <string>
 #include "VertexBuffer.h"
-class Mesh
+#include "GeometryFile.h"
+#include "ResourceHandler.h"
+
+class Mesh: private GeometryFile, private ResourceHandler<Mesh>
 {
-	std::vector<xyznuvtb> xyznuvtbBuffer;
-	std::vector<unsigned int> indexBufferFromFile;
+	unsigned int VertexAttributeObject;
+	unsigned int VertexBufferObject;
+	unsigned int IndexBufferObject;
+
+	bool isInitilized;
 public:
 
-	unsigned int* indexBufferData() {
-		auto location = indexBufferFromFile.data();
-		return location;
-	}
-	xyznuvtb* dataPointer() 
-	{
-		return xyznuvtbBuffer.data();
-	}
-
-	VertexBufferType type;
-	int numberOfIndices;
-	int numberOfvertices;
-
-	int sizeOfIndexBuffer;
-	int sizeOfVertexBuffer;
-
-	Mesh(std::string filepath);
-	Mesh() :numberOfIndices(-1), numberOfvertices(-1), sizeOfIndexBuffer(-1), sizeOfVertexBuffer(-1){};
+	Mesh(std::string filepath, bool initilizeOpenGLFucntions = true);
+	Mesh() = default;
 	
+	void generateOpenGLdata();
 
+	void onRender();
 };
 
 

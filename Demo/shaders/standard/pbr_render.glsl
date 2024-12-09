@@ -16,6 +16,8 @@ uniform samplerCube prefilterMap;
 uniform sampler2D brdfLUT;
 uniform sampler2D dynamicSSA0;
 
+uniform sampler2D SSR;
+
 layout (std140, binding = 0) uniform Matrices
 {
     mat4 projectionMatrix;
@@ -24,8 +26,8 @@ layout (std140, binding = 0) uniform Matrices
 };
 
 
-vec3 LightPosition = vec3(0.38412f,  3.1104f, -6.22991f);
-vec3 LightColor = vec3(1.0f, 0.0f, 0.0f) * 0;
+vec3 LightPosition = vec3(0,  40.7, 10.7);
+vec3 LightColor = vec3(1.0f, 1.0f, 1.0f) * 10;
 
 const float PI = 3.14159265359;
 
@@ -85,6 +87,8 @@ void main()
 	float ao = texture(dynamicSSA0, TexCoords).b;
     vec3 FragPos = texture(gPosition, TexCoords).xyz;
 	
+    vec3 SSRColor = texture(SSR, TexCoords).rgb;
+
     // input lighting data
     vec3 N = texture(gNormal, TexCoords).xyz;
     vec3 V = normalize(viewPos - FragPos);
@@ -100,10 +104,12 @@ void main()
     for(int i = 0; i < 1; ++i) 
     {
         // calculate per-light radiance
-        vec3 L = normalize(LightPosition - FragPos); //Light direction
+        vec3 L = normalize(LightPosition /*- FragPos*/); //Light direction
         vec3 H = normalize(V + L);
-        float attenuation = 1.0 / (length(L) * length(L));
-        float TEST = max(dot(N, L), 0.0);
+
+        float DISTANCE = length( - FragPos);
+        float attenuation = 1.0 / (DISTANCE * DISTANCE);
+
         vec3 radiance = LightColor * attenuation;
 
         // Cook-Torrance BRDF
@@ -141,7 +147,9 @@ void main()
     kD *= 1.0 - metallic;	  
     
     vec3 irradiance = texture(irradianceMap, N).rgb;
+
     vec3 diffuse = irradiance * albedo;
+
     
     // sample both the pre-filter map and the BRDF lut and combine them together as per the Split-Sum approximation to get the IBL specular part.
     const float MAX_REFLECTION_LOD = 4.0;
@@ -151,7 +159,7 @@ void main()
 
     vec3 ambient = (kD * diffuse + specular) * ao;
     
-    vec3 color = ambient + Lo;
+    vec3 color = ambient + Lo + SSRColor;
 
     // HDR tonemapping
     color = color / (color + vec3(1.0));
@@ -159,7 +167,7 @@ void main()
     // gamma correct
     color = pow(color, vec3(1.0/2.2)); 
 
-    FragColor = vec4(color, 1.0);
+    FragColor = vec4(color, 1);
 }
 
 #endif

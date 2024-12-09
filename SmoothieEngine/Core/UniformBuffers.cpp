@@ -41,7 +41,6 @@ void UniformBuffers::addBufferSubData(const UniformBufferData& data)
 
 void UniformBuffers::addBufferSubData(unsigned int dataSize, void* dataPtr)
 {
-	//TODO: change this 32 bytes hardcoded
 	unsigned int padding = 0;
 	if ((dataSize % 16) != 0) 
 	{
@@ -59,7 +58,9 @@ void UniformBuffers::onRender()
 {
 	glBindBuffer(GL_UNIFORM_BUFFER, bufferID);
 	glBindBufferBase(GL_UNIFORM_BUFFER, currentBufferIndex, bufferID);
+
 	unsigned int offset = 0;
+	
 	for (int i = 0; i < bufferSubData.size(); i++)
 	{
 		glBufferSubData(GL_UNIFORM_BUFFER, offset, bufferSubData[i].dataSize, bufferSubData[i].dataPtr);
